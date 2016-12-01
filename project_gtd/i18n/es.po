@@ -3,12 +3,14 @@
 # * project_gtd
 # 
 # Translators:
+# Antonio Trueba, 2016
+# Antonio Trueba, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: project (8.0)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-09-08 09:57+0000\n"
-"PO-Revision-Date: 2015-09-11 10:25+0000\n"
+"POT-Creation-Date: 2016-09-02 14:57+0000\n"
+"PO-Revision-Date: 2016-09-16 21:45+0000\n"
 "Last-Translator: OCA Transbot <transbot@odoo-community.org>\n"
 "Language-Team: Spanish (http://www.transifex.com/oca/OCA-project-8-0/language/es/)\n"
 "MIME-Version: 1.0\n"
@@ -73,6 +75,14 @@ msgid "Created on"
 msgstr "Creado en"
 
 #. module: project_gtd
+#: field:project.gtd.context,display_name:0
+#: field:project.gtd.timebox,display_name:0
+#: field:project.timebox.empty,display_name:0
+#: field:project.timebox.fill.plan,display_name:0
+msgid "Display Name"
+msgstr "Nombre mostrado"
+
+#. module: project_gtd
 #: model:ir.actions.act_window,name:project_gtd.action_project_gtd_empty
 #: view:project.timebox.empty:project_gtd.view_project_gtd_empty
 msgid "Empty Timebox"
@@ -113,7 +123,15 @@ msgstr "ID"
 #. module: project_gtd
 #: view:project.task:project_gtd.view_task_gtd_search
 msgid "Last Message"
-msgstr ""
+msgstr "Último mensaje"
+
+#. module: project_gtd
+#: field:project.gtd.context,__last_update:0
+#: field:project.gtd.timebox,__last_update:0
+#: field:project.timebox.empty,__last_update:0
+#: field:project.timebox.fill.plan,__last_update:0
+msgid "Last Modified on"
+msgstr "Última modificación el"
 
 #. module: project_gtd
 #: field:project.gtd.context,write_uid:0 field:project.gtd.timebox,write_uid:0
@@ -139,7 +157,7 @@ msgstr "Largo plazo"
 #: model:ir.actions.act_window,name:project_gtd.open_gtd_task
 #: model:ir.ui.menu,name:project_gtd.menu_open_gtd_timebox_tree
 msgid "My Tasks (GTD)"
-msgstr ""
+msgstr "Mis tareas (GTD)"
 
 #. module: project_gtd
 #: field:project.timebox.empty,name:0
@@ -192,7 +210,7 @@ msgstr "Tarea"
 #: model:ir.actions.act_window,name:project_gtd.open_gtd_all_tasks
 #: model:ir.ui.menu,name:project_gtd.menu_open_gtd_timebox_all_tree
 msgid "Tasks (GTD)"
-msgstr ""
+msgstr "Tareas (GTD)"
 
 #. module: project_gtd
 #: field:project.timebox.fill.plan,task_ids:0

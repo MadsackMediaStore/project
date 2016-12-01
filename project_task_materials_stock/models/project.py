@@ -2,7 +2,7 @@
 # (c) 2015 Antiun Ingeniería S.L. - Sergio Teruel
 # (c) 2015 Antiun Ingeniería S.L. - Carlos Dauden
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
-from openerp import models, fields, api
+from openerp import models, fields, api, exceptions, _
 from openerp.tools.float_utils import float_round
 
 
@@ -18,22 +18,32 @@ class ProjectTaskType(models.Model):
 class Task(models.Model):
     _inherit = "project.task"
 
+    @api.multi
+    @api.depends('material_ids.stock_move_id')
     def _compute_stock_move(self):
-        self.stock_move_ids = self.mapped('material_ids.stock_move_id')
+        for task in self:
+            task.stock_move_ids = task.mapped('material_ids.stock_move_id')
 
+    @api.multi
+    @api.depends('material_ids.analytic_line_id')
     def _compute_analytic_line(self):
-        self.analytic_line_ids = self.mapped('material_ids.analytic_line_id')
+        for task in self:
+            task.analytic_line_ids = task.mapped(
+                'material_ids.analytic_line_id')
 
+    @api.multi
     @api.depends('stock_move_ids.state')
-    def _check_stock_state(self):
-        if not self.stock_move_ids:
-            self.stock_state = 'pending'
-        elif self.stock_move_ids.filtered(lambda r: r.state == 'confirmed'):
-            self.stock_state = 'confirmed'
-        elif self.stock_move_ids.filtered(lambda r: r.state == 'assigned'):
-            self.stock_state = 'assigned'
-        elif self.stock_move_ids.filtered(lambda r: r.state == 'done'):
-            self.stock_state = 'done'
+    def _compute_stock_state(self):
+        for task in self:
+            if not task.stock_move_ids:
+                task.stock_state = 'pending'
+            elif task.stock_move_ids.filtered(
+                    lambda r: r.state == 'confirmed'):
+                task.stock_state = 'confirmed'
+            elif task.stock_move_ids.filtered(lambda r: r.state == 'assigned'):
+                task.stock_state = 'assigned'
+            elif task.stock_move_ids.filtered(lambda r: r.state == 'done'):
+                task.stock_state = 'done'
 
     stock_move_ids = fields.Many2many(
         comodel_name='stock.move', compute='_compute_stock_move',
@@ -46,34 +56,46 @@ class Task(models.Model):
         [('pending', 'Pending'),
          ('confirmed', 'Confirmed'),
          ('assigned', 'Assigned'),
-         ('done', 'Done')], compute='_check_stock_state', string='Stock State')
+         ('done', 'Done')],
+        compute='_compute_stock_state', string='Stock State')
 
     @api.multi
     def unlink_stock_move(self):
+        res = False
         moves = self.mapped('stock_move_ids')
-        moves.filtered(lambda r: r.state == 'assigned').do_unreserve()
-        moves.filtered(
-            lambda r: r.state in ['waiting', 'confirmed', 'assigned']
-        ).write({'state': 'draft'})
-        moves.unlink()
+        moves_done = moves.filtered(lambda r: r.state == 'done')
+        if not moves_done:
+            moves.filtered(lambda r: r.state == 'assigned').do_unreserve()
+            moves.filtered(
+                lambda r: r.state in ['waiting', 'confirmed', 'assigned']
+            ).write({'state': 'draft'})
+            res = moves.unlink()
+        return res
 
     @api.multi
     def write(self, vals):
+        res = super(Task, self).write(vals)
         for task in self:
-            res = super(Task, self).write(vals)
             if 'stage_id' in vals:
                 if task.stage_id.consume_material:
-                    task.material_ids.create_stock_move()
-                    task.material_ids.create_analytic_line()
+                    if not task.stock_move_ids:
+                        task.material_ids.create_stock_move()
+                        task.material_ids.create_analytic_line()
                 else:
-                    task.unlink_stock_move()
-                    task.analytic_line_ids.unlink()
+                    if task.unlink_stock_move():
+                        if any(task.material_ids.mapped(
+                                'analytic_line_id.invoice_id')):
+                            raise exceptions.Warning(
+                                _("You can't move to a not consume stage if "
+                                  "there are already invoiced analytic lines")
+                            )
+                    task.material_ids.mapped('analytic_line_id').unlink()
         return res
 
     @api.multi
     def unlink(self):
-        self.unlink_stock_move()
-        self.analytic_line_ids.unlink()
+        self.mapped('stock_move_ids').unlink()
+        self.mapped('analytic_line_ids').unlink()
         return super(Task, self).unlink()
 
     @api.multi
